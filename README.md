@@ -211,6 +211,10 @@ configs/       Example configurations
 tests/         Unit tests and reference comparisons
 ```
 
+## Example Index for MSMarco and Lotte
+
+An example of pre-built indexes for the MS MARCO and LoTTE datasets is available for download [here](https://huggingface.co/datasets/eitbar/msmarco-gem).
+
 ## Acknowledgements
 
 Special thanks to [@xzwj1699](https://github.com/xzwj1699) for their valuable contributions to improving the code quality and enhancing this repository.
