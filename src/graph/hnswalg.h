@@ -166,6 +166,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
     mutable std::mutex label_lookup_lock;  // lock for label_lookup_
     std::unordered_map<labeltype, tableint> label_lookup_;
+    std::mutex level_generator_lock;
     ClusterEntryMap entry_map;
     std::vector<bool>search_set;
 
@@ -351,6 +352,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
 
     int getRandomLevel(double reverse_size) {
+        std::lock_guard<std::mutex> lock(level_generator_lock);
         std::uniform_real_distribution<double> distribution(0.0, 1.0);
         double r = -log(distribution(level_generator_)) * reverse_size;
         return (int) 0;

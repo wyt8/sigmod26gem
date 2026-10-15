@@ -29,8 +29,33 @@ Graph Graph::build(const EncodedCorpus& corpus, const BuildOptions& options) {
     for (const auto& cluster : corpus.clusters) {
         if (cluster.empty()) continue;
         impl->graph->entry_map.clear();
-        for (auto id : cluster)
+        // The entry must be installed before workers begin: each later insert
+        // routes from it.  Keep clusters serial because entry_map is reused
+        // for each cluster, but parallelize independent document inserts.
+        const auto entry = cluster.front();
+        impl->graph->addClusterPointEntry(&impl->documents[entry], distances.data(), entry, entry);
+        if (options.build_threads == 1 || cluster.size() == 1) {
+            for (std::size_t i = 1; i < cluster.size(); ++i) {
+                const auto id = cluster[i];
+                impl->graph->addClusterPointEntry(&impl->documents[id], distances.data(), id, entry);
+            }
+            continue;
+        }
+        if (options.build_threads == 0) {
+#pragma omp parallel for schedule(static)
+            for (std::ptrdiff_t i = 1;
+                 i < static_cast<std::ptrdiff_t>(cluster.size()); ++i) {
+                const auto id = cluster[static_cast<std::size_t>(i)];
+                impl->graph->addClusterPointEntry(&impl->documents[id], distances.data(), id, entry);
+            }
+            continue;
+        }
+#pragma omp parallel for schedule(static) num_threads(options.build_threads)
+        for (std::ptrdiff_t i = 1;
+             i < static_cast<std::ptrdiff_t>(cluster.size()); ++i) {
+            const auto id = cluster[static_cast<std::size_t>(i)];
             impl->graph->addClusterPointEntry(&impl->documents[id], distances.data(), id, cluster.front());
+        }
     }
     impl->prepare_search(corpus);
     return Graph(std::move(impl));

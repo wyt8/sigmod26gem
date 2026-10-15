@@ -402,7 +402,10 @@
         if (label == entry) {
             currObj = cur_c;
         } else {
-            currObj = label_lookup_[entry];
+            // Other build workers may insert new labels (and rehash this
+            // unordered_map), so protect this read as well as writes.
+            std::unique_lock<std::mutex> lock_table(label_lookup_lock);
+            currObj = label_lookup_.at(entry);
         }
         enterpoint_copy = currObj;
         entry_map[cur_c] = enterpoint_copy;
